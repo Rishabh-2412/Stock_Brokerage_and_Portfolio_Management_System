@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
  
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManagerFactory;
  
 /**
  * Database Configuration
