@@ -1,121 +1,52 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.SecurityDTO;
+import com.example.backend.dto.PriceHistoryDTO;
 import com.example.backend.service.MarketDataService;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
+/**
+ * Optional stretch module: daily OHLCV history for charting. ADMIN adds
+ * records manually (no real exchange feed in this mini project); any
+ * logged-in user can read.
+ */
 @RestController
-@RequestMapping("/api/market")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/market/price-history")
+@RequiredArgsConstructor
+@Tag(name = "Market Data", description = "Daily OHLCV price history for charting - optional stretch module")
+@SecurityRequirement(name = "bearerAuth")
 public class MarketController {
 
-    @Autowired
-    private MarketDataService marketDataService;
+    private final MarketDataService marketDataService;
 
-    @GetMapping("/overview")
-    public ResponseEntity<Map<String, Object>> getMarketOverview() {
-        Map<String, Object> overview = marketDataService.getMarketOverview();
-        return ResponseEntity.ok(overview);
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Add a daily OHLCV record for a security (ADMIN only)")
+    public ResponseEntity<PriceHistoryDTO> addPriceRecord(@Valid @RequestBody PriceHistoryDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(marketDataService.addPriceRecord(request));
     }
 
-    @GetMapping("/indices")
-    public ResponseEntity<Map<String, Object>> getMarketIndices() {
-        Map<String, Object> indices = marketDataService.getMarketIndices();
-        return ResponseEntity.ok(indices);
-    }
-
-    @GetMapping("/price-history/{securityId}")
-    public ResponseEntity<List<Map<String, Object>>> getPriceHistory(@PathVariable Long securityId) {
-        List<Map<String, Object>> priceHistory = marketDataService.getPriceHistory(securityId);
-        return ResponseEntity.ok(priceHistory);
-    }
-
-    @GetMapping("/price-history/{securityId}/date-range")
-    public ResponseEntity<List<Map<String, Object>>> getPriceHistoryByDateRange(@PathVariable Long securityId,
-            @RequestParam LocalDate startDate,
-            @RequestParam LocalDate endDate) {
-        List<Map<String, Object>> priceHistory = marketDataService.getPriceHistoryByDateRange(securityId, startDate,
-                endDate);
-        return ResponseEntity.ok(priceHistory);
-    }
-
-    @GetMapping("/price-history/{securityId}/daily")
-    public ResponseEntity<List<Map<String, Object>>> getDailyPriceHistory(@PathVariable Long securityId) {
-        List<Map<String, Object>> priceHistory = marketDataService.getDailyPriceHistory(securityId);
-        return ResponseEntity.ok(priceHistory);
-    }
-
-    @GetMapping("/price-history/{securityId}/weekly")
-    public ResponseEntity<List<Map<String, Object>>> getWeeklyPriceHistory(@PathVariable Long securityId) {
-        List<Map<String, Object>> priceHistory = marketDataService.getWeeklyPriceHistory(securityId);
-        return ResponseEntity.ok(priceHistory);
-    }
-
-    @GetMapping("/price-history/{securityId}/monthly")
-    public ResponseEntity<List<Map<String, Object>>> getMonthlyPriceHistory(@PathVariable Long securityId) {
-        List<Map<String, Object>> priceHistory = marketDataService.getMonthlyPriceHistory(securityId);
-        return ResponseEntity.ok(priceHistory);
-    }
-
-    @GetMapping("/security/{securityId}/ohlc")
-    public ResponseEntity<Map<String, Object>> getOHLCData(@PathVariable Long securityId) {
-        Map<String, Object> ohlcData = marketDataService.getOHLCData(securityId);
-        return ResponseEntity.ok(ohlcData);
-    }
-
-    @GetMapping("/security/{securityId}/ohlc-range")
-    public ResponseEntity<List<Map<String, Object>>> getOHLCDataRange(@PathVariable Long securityId,
-            @RequestParam LocalDate startDate,
-            @RequestParam LocalDate endDate) {
-        List<Map<String, Object>> ohlcData = marketDataService.getOHLCDataRange(securityId, startDate, endDate);
-        return ResponseEntity.ok(ohlcData);
-    }
-
-    @GetMapping("/security/{securityId}/volume")
-    public ResponseEntity<Double> getTradingVolume(@PathVariable Long securityId) {
-        Double volume = marketDataService.getTradingVolume(securityId);
-        return ResponseEntity.ok(volume);
-    }
-
-    @GetMapping("/security/{securityId}/change-percent")
-    public ResponseEntity<Double> getDayChangePercent(@PathVariable Long securityId) {
-        Double changePercent = marketDataService.getDayChangePercent(securityId);
-        return ResponseEntity.ok(changePercent);
-    }
-
-    @GetMapping("/security/{securityId}/52-week-high")
-    public ResponseEntity<Double> get52WeekHigh(@PathVariable Long securityId) {
-        Double high = marketDataService.get52WeekHigh(securityId);
-        return ResponseEntity.ok(high);
-    }
-
-    @GetMapping("/security/{securityId}/52-week-low")
-    public ResponseEntity<Double> get52WeekLow(@PathVariable Long securityId) {
-        Double low = marketDataService.get52WeekLow(securityId);
-        return ResponseEntity.ok(low);
-    }
-
-    @GetMapping("/security/{securityId}/moving-average/{days}")
-    public ResponseEntity<Double> getMovingAverage(@PathVariable Long securityId, @PathVariable int days) {
-        Double movingAverage = marketDataService.getMovingAverage(securityId, days);
-        return ResponseEntity.ok(movingAverage);
-    }
-
-    @GetMapping("/trends")
-    public ResponseEntity<Map<String, Object>> getMarketTrends() {
-        Map<String, Object> trends = marketDataService.getMarketTrends();
-        return ResponseEntity.ok(trends);
-    }
-
-    @GetMapping("/top-movers")
-    public ResponseEntity<Map<String, List<SecurityDTO>>> getTopMovers(@RequestParam(defaultValue = "5") int limit) {
-        Map<String, List<SecurityDTO>> movers = marketDataService.getTopMovers(limit);
-        return ResponseEntity.ok(movers);
+    @GetMapping("/{securityId}")
+    @Operation(summary = "Get price history for a security, optionally in a date range",
+            description = "Provide both startDate and endDate to filter, or omit both for the full history")
+    public ResponseEntity<List<PriceHistoryDTO>> getHistory(
+            @PathVariable Long securityId,
+            @Parameter(description = "Inclusive start date, e.g. 2026-01-01")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "Inclusive end date, e.g. 2026-12-31")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(marketDataService.getHistory(securityId, startDate, endDate));
     }
 }

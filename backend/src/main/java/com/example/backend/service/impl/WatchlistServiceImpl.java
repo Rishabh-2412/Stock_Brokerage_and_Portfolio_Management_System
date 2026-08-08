@@ -1,129 +1,99 @@
 package com.example.backend.service.impl;
 
-import com.example.backend.dto.SecurityDTO;
+import com.example.backend.dto.WatchlistDTO;
 import com.example.backend.entity.Account;
 import com.example.backend.entity.Security;
+import com.example.backend.entity.User;
 import com.example.backend.entity.Watchlist;
+import com.example.backend.exception.DuplicateTradeException;
 import com.example.backend.exception.ResourceNotFoundException;
-import com.example.backend.mapper.SecurityMapper;
+import com.example.backend.exception.UnauthorisedAccessException;
+import com.example.backend.mapper.WatchlistMapper;
 import com.example.backend.repository.AccountRepository;
 import com.example.backend.repository.SecurityRepository;
+import com.example.backend.repository.UserRepository;
 import com.example.backend.repository.WatchlistRepository;
 import com.example.backend.service.WatchlistService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Client-only feature: every method verifies the calling user owns the
+ * account in question. No ADMIN/DEALER override here, unlike Accounts and
+ * Securities - a watchlist is a personal list, not shared data.
+ */
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class WatchlistServiceImpl implements WatchlistService {
 
-    @Autowired
-    private WatchlistRepository watchlistRepository;
-
-    @Autowired
-    private AccountRepository accountRepository;
-
-    @Autowired
-    private SecurityRepository securityRepository;
-
-    @Autowired
-    private SecurityMapper securityMapper;
+    private final WatchlistRepository watchlistRepository;
+    private final AccountRepository accountRepository;
+    private final SecurityRepository securityRepository;
+    private final UserRepository userRepository;
 
     @Override
-    public void addToWatchlist(Long accountId, Long securityId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
+    public WatchlistDTO addToWatchlist(String username, WatchlistDTO request) {
+        User user = getUserOrThrow(username);
+        Account account = getOwnedAccountOrThrow(request.getAccountId(), user);
+        Security security = securityRepository.findById(request.getSecurityId())
+                .orElseThrow(() -> new ResourceNotFoundException("Security not found: " + request.getSecurityId()));
 
-        Security security = securityRepository.findById(securityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Security not found with id: " + securityId));
-
-        boolean exists = watchlistRepository.existsByAccountAndSecurity(account, security);
-        if (exists) {
-            throw new IllegalArgumentException("Security already in watchlist");
+        if (watchlistRepository.existsByAccountIdAndSecurityId(account.getId(), security.getId())) {
+            throw new DuplicateTradeException("This security is already on the watchlist for this account");
         }
 
-        Watchlist watchlist = new Watchlist();
-        watchlist.setAccount(account);
-        watchlist.setSecurity(security);
-        watchlist.setAddedAt(LocalDateTime.now());
+        Watchlist watchlist = Watchlist.builder()
+                .account(account)
+                .security(security)
+                .addedAt(LocalDateTime.now())
+                .build();
 
-        watchlistRepository.save(watchlist);
+        return WatchlistMapper.toDTO(watchlistRepository.save(watchlist));
     }
 
     @Override
-    public void removeFromWatchlist(Long accountId, Long securityId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
+    public void removeFromWatchlist(String username, Long watchlistId) {
+        User user = getUserOrThrow(username);
+        Watchlist watchlist = watchlistRepository.findById(watchlistId)
+                .orElseThrow(() -> new ResourceNotFoundException("Watchlist entry not found: " + watchlistId));
 
-        Security security = securityRepository.findById(securityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Security not found with id: " + securityId));
-
-        Watchlist watchlist = watchlistRepository.findByAccountAndSecurity(account, security)
-                .orElseThrow(() -> new ResourceNotFoundException("Security not in watchlist"));
+        if (!watchlist.getAccount().getUser().getId().equals(user.getId())) {
+            throw new UnauthorisedAccessException("You do not have access to this watchlist entry");
+        }
 
         watchlistRepository.delete(watchlist);
     }
 
     @Override
-    public List<SecurityDTO> getWatchlist(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
+    @Transactional(readOnly = true)
+    public List<WatchlistDTO> getWatchlistForAccount(String username, Long accountId) {
+        User user = getUserOrThrow(username);
+        Account account = getOwnedAccountOrThrow(accountId, user);
 
-        return watchlistRepository.findByAccount(account).stream()
-                .map(Watchlist::getSecurity)
-                .map(securityMapper::toDTO)
+        return watchlistRepository.findByAccountId(account.getId())
+                .stream()
+                .map(WatchlistMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public boolean isInWatchlist(Long accountId, Long securityId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
-
-        Security security = securityRepository.findById(securityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Security not found with id: " + securityId));
-
-        return watchlistRepository.existsByAccountAndSecurity(account, security);
+    private User getUserOrThrow(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
 
-    @Override
-    public long getWatchlistSize(Long accountId) {
+    private Account getOwnedAccountOrThrow(Long accountId, User user) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + accountId));
 
-        return watchlistRepository.countByAccount(account);
-    }
-
-    @Override
-    public void clearWatchlist(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
-
-        List<Watchlist> watchlistItems = watchlistRepository.findByAccount(account);
-        watchlistRepository.deleteAll(watchlistItems);
-    }
-
-    @Override
-    public void addToWatchlistBySymbol(Long accountId, String symbol) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
-
-        Security security = securityRepository.findBySymbol(symbol)
-                .orElseThrow(() -> new ResourceNotFoundException("Security not found with symbol: " + symbol));
-
-        addToWatchlist(accountId, security.getSecurityId());
-    }
-
-    @Override
-    public void removeFromWatchlistBySymbol(Long accountId, String symbol) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
-
-        Security security = securityRepository.findBySymbol(symbol)
-                .orElseThrow(() -> new ResourceNotFoundException("Security not found with symbol: " + symbol));
-
-        removeFromWatchlist(accountId, security.getSecurityId());
+        if (!account.getUser().getId().equals(user.getId())) {
+            throw new UnauthorisedAccessException("You do not have access to this account's watchlist");
+        }
+        return account;
     }
 }

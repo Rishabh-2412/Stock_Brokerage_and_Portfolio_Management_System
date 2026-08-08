@@ -1,49 +1,23 @@
 package com.example.backend.config;
 
- 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
- 
+
 /**
- * JWT Configuration class to hold JWT-related properties
- * These values are typically loaded from application.yml
+ * Binds to application.yml under `app.jwt.*`. See the application.yml
+ * snippet provided alongside this module.
  */
+@Getter
+@Setter
 @Configuration
+@ConfigurationProperties(prefix = "app.jwt")
 public class JwtConfig {
- 
-    @Value("${jwt.secret:your-secret-key-change-this-in-production}")
+
+    /** Must be at least 32 characters (256 bits) for HS256. */
     private String secret;
- 
-    @Value("${jwt.expiration:86400000}")  // Default: 24 hours in milliseconds
-    private long expiration;
- 
-    @Value("${jwt.refresh.expiration:604800000}")  // Default: 7 days in milliseconds
-    private long refreshExpiration;
- 
-    @Value("${jwt.header:Authorization}")
-    private String header;
- 
-    @Value("${jwt.prefix:Bearer }")
-    private String prefix;
- 
-    // Getters
-    public String getSecret() {
-        return secret;
-    }
- 
-    public long getExpiration() {
-        return expiration;
-    }
- 
-    public long getRefreshExpiration() {
-        return refreshExpiration;
-    }
- 
-    public String getHeader() {
-        return header;
-    }
- 
-    public String getPrefix() {
-        return prefix;
-    }
+
+    /** Token validity in milliseconds. Default 24h if not set in yml. */
+    private long expirationMs = 86_400_000L;
 }

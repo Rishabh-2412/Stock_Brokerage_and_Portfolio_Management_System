@@ -1,71 +1,54 @@
 package com.example.backend.entity;
- 
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
- 
+
+/**
+ * Tradable instrument (stock). Matches the Securities table in the DB
+ * design doc. `lastUpdated` is separate from BaseEntity's inherited
+ * `updatedAt` - it specifically tracks when the PRICE was last changed,
+ * since that's what other modules (Orders, Holdings, Watchlist) will
+ * actually read.
+ */
 @Entity
-@Table(name = "securities", uniqueConstraints = {
-    @UniqueConstraint(columnNames = "symbol")
-})
-@Data
+@Table(name = "securities")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = {"holdings", "transactions", "orders", "watchlist", "priceHistory"})
-public class Security {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long securityId;
-    
-    @Column(nullable = false, unique = true)
+@Builder
+public class Security extends BaseEntity {
+
+    @NotBlank
+    @Column(nullable = false, unique = true, length = 20)
     private String symbol;
-    
-    @Column(nullable = false)
+
+    @NotBlank
+    @Column(nullable = false, length = 150)
     private String name;
-    
-    @Column(nullable = false)
+
+    @Column(length = 50)
     private String exchange;
-    
-    @Column
+
+    @Column(length = 50)
     private String sector;
-    
-    @Column(nullable = false)
+
+    @Column(name = "current_price", nullable = false, precision = 19, scale = 4)
     private BigDecimal currentPrice;
-    
-    @Column
+
+    @Column(name = "market_cap", precision = 19, scale = 2)
     private BigDecimal marketCap;
-    
-    @Column(nullable = false)
+
+    @Column(name = "last_updated")
     private LocalDateTime lastUpdated;
-    
-    @OneToMany(mappedBy = "security", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Holdings> holdings;
-    
-    @OneToMany(mappedBy = "security", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Transaction> transactions;
-    
-    @OneToMany(mappedBy = "security", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Order> orders;
-    
-    @OneToMany(mappedBy = "security", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Watchlist> watchlist;
-    
-    @OneToMany(mappedBy = "security", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PriceHistory> priceHistory;
-    
-    @PrePersist
-    protected void onCreate() {
-        this.lastUpdated = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        this.lastUpdated = LocalDateTime.now();
-    }
 }

@@ -3,49 +3,41 @@ package com.example.backend.controller;
 import com.example.backend.dto.request.LoginRequest;
 import com.example.backend.dto.request.RegisterRequest;
 import com.example.backend.dto.response.AuthResponse;
+import com.example.backend.dto.response.UserResponse;
 import com.example.backend.service.AuthService;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
- 
-import jakarta.validation.Valid;
- 
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * Public endpoints - no token needed. Test /register then /login first in
+ * Swagger, copy the returned token, then hit Authorize before testing any
+ * other module's endpoints.
+ */
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+@Tag(name = "Auth", description = "Registration and login (public)")
 public class AuthController {
- 
-    @Autowired
-    private AuthService authService;
- 
+
+    private final AuthService authService;
+
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        AuthResponse response = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    @Operation(summary = "Register a new CLIENT account")
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
- 
+
     @PostMapping("/login")
+    @Operation(summary = "Log in and receive a JWT")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
-    }
- 
-    @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader("Authorization") String token) {
-        authService.logout(token);
-        return ResponseEntity.ok("Logged out successfully");
-    }
- 
-    @PostMapping("/refresh-token")
-    public ResponseEntity<AuthResponse> refreshToken(@RequestHeader("Authorization") String token) {
-        AuthResponse response = authService.refreshToken(token);
-        return ResponseEntity.ok(response);
-    }
- 
-    @GetMapping("/validate-token")
-    public ResponseEntity<Boolean> validateToken(@RequestHeader("Authorization") String token) {
-        boolean isValid = authService.validateToken(token);
-        return ResponseEntity.ok(isValid);
+        return ResponseEntity.ok(authService.login(request));
     }
 }

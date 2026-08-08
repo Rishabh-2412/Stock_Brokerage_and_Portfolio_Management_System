@@ -1,64 +1,67 @@
 package com.example.backend.entity;
- 
+
+import com.example.backend.entity.enums.TransactionStatus;
+import com.example.backend.entity.enums.TransactionType;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
- 
+
+/**
+ * A completed trade, created when an Order is executed. Mini-project
+ * simplification: settlement is instant (T+0) - settlementDate is always
+ * set equal to transactionDate, no real settlement cycle.
+ */
 @Entity
 @Table(name = "transactions")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = {"account", "security"})
+@Builder
 public class Transaction extends BaseEntity {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long transactionId;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
+    @NotNull
     private Account account;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "security_id")
+    @JoinColumn(name = "security_id", nullable = false)
+    @NotNull
     private Security security;
-    
+
     @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_type", nullable = false, length = 10)
+    private TransactionType transactionType;
+
     @Column(nullable = false)
-    private TransactionType transactionType; // BUY, SELL, DIVIDEND
-    
-    @Column(nullable = false)
-    private Long quantity;
-    
-    @Column(nullable = false)
+    private Integer quantity;
+
+    @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal price;
-    
-    @Column(nullable = false)
+
+    @Column(name = "total_amount", nullable = false, precision = 19, scale = 4)
     private BigDecimal totalAmount;
-    
-    @Column(nullable = false)
-    private BigDecimal commission;
-    
+
+    @Column(nullable = false, precision = 19, scale = 4)
+    @Builder.Default
+    private BigDecimal commission = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TransactionStatus status; // PENDING, COMPLETED, FAILED, CANCELLED
-    
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private TransactionStatus status = TransactionStatus.COMPLETED;
+
+    @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate;
-    
-    @Column
+
+    @Column(name = "settlement_date")
     private LocalDateTime settlementDate;
-    
-    public enum TransactionType {
-        BUY, SELL, DIVIDEND
-    }
-    
-    public enum TransactionStatus {
-        PENDING, COMPLETED, FAILED, CANCELLED
-    }
 }

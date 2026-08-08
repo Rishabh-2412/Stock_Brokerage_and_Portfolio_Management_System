@@ -1,90 +1,52 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.SecurityDTO;
+import com.example.backend.dto.WatchlistDTO;
 import com.example.backend.service.WatchlistService;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
- 
+
 import java.util.List;
- 
+
 @RestController
 @RequestMapping("/api/watchlist")
-@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+@Tag(name = "Watchlist", description = "Per-account watchlist of securities - owner access only")
+@SecurityRequirement(name = "bearerAuth")
 public class WatchlistController {
- 
-    @Autowired
-    private WatchlistService watchlistService;
- 
-    @PostMapping("/account/{accountId}/security/{securityId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> addToWatchlist(@PathVariable Long accountId, @PathVariable Long securityId) {
-        watchlistService.addToWatchlist(accountId, securityId);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Security added to watchlist");
+
+    private final WatchlistService watchlistService;
+
+    @PostMapping
+    @Operation(summary = "Add a security to an account's watchlist",
+            description = "The account must belong to the logged-in user")
+    public ResponseEntity<WatchlistDTO> addToWatchlist(
+            Authentication authentication,
+            @Valid @RequestBody WatchlistDTO request) {
+        WatchlistDTO response = watchlistService.addToWatchlist(authentication.getName(), request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
- 
-    @DeleteMapping("/account/{accountId}/security/{securityId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> removeFromWatchlist(@PathVariable Long accountId, @PathVariable Long securityId) {
-        watchlistService.removeFromWatchlist(accountId, securityId);
-        return ResponseEntity.ok("Security removed from watchlist");
+
+    @DeleteMapping("/{watchlistId}")
+    @Operation(summary = "Remove an entry from the watchlist")
+    public ResponseEntity<Void> removeFromWatchlist(
+            Authentication authentication,
+            @PathVariable Long watchlistId) {
+        watchlistService.removeFromWatchlist(authentication.getName(), watchlistId);
+        return ResponseEntity.noContent().build();
     }
- 
+
     @GetMapping("/account/{accountId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<SecurityDTO>> getWatchlistByAccountId(@PathVariable Long accountId) {
-        List<SecurityDTO> watchlist = watchlistService.getWatchlistByAccountId(accountId);
-        return ResponseEntity.ok(watchlist);
-    }
- 
-    @GetMapping("/account/{accountId}/count")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Integer> getWatchlistCount(@PathVariable Long accountId) {
-        Integer count = watchlistService.getWatchlistCount(accountId);
-        return ResponseEntity.ok(count);
-    }
- 
-    @GetMapping("/account/{accountId}/contains/{securityId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Boolean> isSecurityInWatchlist(@PathVariable Long accountId, @PathVariable Long securityId) {
-        Boolean isInWatchlist = watchlistService.isSecurityInWatchlist(accountId, securityId);
-        return ResponseEntity.ok(isInWatchlist);
-    }
- 
-    @GetMapping("/account/{accountId}/by-symbol/{symbol}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<SecurityDTO> getWatchlistItemBySymbol(@PathVariable Long accountId, @PathVariable String symbol) {
-        SecurityDTO security = watchlistService.getWatchlistItemBySymbol(accountId, symbol);
-        return ResponseEntity.ok(security);
-    }
- 
-    @PostMapping("/account/{accountId}/clear")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> clearWatchlist(@PathVariable Long accountId) {
-        watchlistService.clearWatchlist(accountId);
-        return ResponseEntity.ok("Watchlist cleared successfully");
-    }
- 
-    @GetMapping("/account/{accountId}/gainers")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<SecurityDTO>> getWatchlistGainers(@PathVariable Long accountId) {
-        List<SecurityDTO> gainers = watchlistService.getWatchlistGainers(accountId);
-        return ResponseEntity.ok(gainers);
-    }
- 
-    @GetMapping("/account/{accountId}/losers")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<SecurityDTO>> getWatchlistLosers(@PathVariable Long accountId) {
-        List<SecurityDTO> losers = watchlistService.getWatchlistLosers(accountId);
-        return ResponseEntity.ok(losers);
-    }
- 
-    @GetMapping("/account/{accountId}/sorted-by-price")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<SecurityDTO>> getWatchlistSortedByPrice(@PathVariable Long accountId) {
-        List<SecurityDTO> watchlist = watchlistService.getWatchlistSortedByPrice(accountId);
-        return ResponseEntity.ok(watchlist);
+    @Operation(summary = "List all watchlist entries for an account you own")
+    public ResponseEntity<List<WatchlistDTO>> getWatchlist(
+            Authentication authentication,
+            @PathVariable Long accountId) {
+        return ResponseEntity.ok(watchlistService.getWatchlistForAccount(authentication.getName(), accountId));
     }
 }

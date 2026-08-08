@@ -1,106 +1,76 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.TransactionDTO;
+import com.example.backend.entity.enums.TransactionType;
 import com.example.backend.service.TransactionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * UPDATED: GET /api/transactions/account/{accountId} now accepts optional
+ * type/startDate/endDate query params for filtering (Module 8: Transaction
+ * History). All three are optional - omit any/all to get the unfiltered list.
+ */
 @RestController
 @RequestMapping("/api/transactions")
-@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+@Tag(name = "Transactions", description = "Order execution and trade history")
+@SecurityRequirement(name = "bearerAuth")
 public class TransactionController {
 
-    @Autowired
-    private TransactionService transactionService;
+    private final TransactionService transactionService;
+
+    @PostMapping("/execute/{orderId}")
+    @PreAuthorize("hasAnyRole('CLIENT','DEALER','ADMIN')")
+    @Operation(summary = "Execute a PENDING order",
+            description = "Fully fills the order at its stored price: creates a Transaction, updates Holdings, and moves cash on the Account. No request body needed.")
+    public ResponseEntity<TransactionDTO> executeOrder(
+            Authentication authentication,
+            @PathVariable Long orderId) {
+        TransactionDTO response = transactionService.executeOrder(authentication.getName(), orderId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 
     @GetMapping("/{transactionId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<TransactionDTO> getTransactionById(@PathVariable Long transactionId) {
-        TransactionDTO transaction = transactionService.getTransactionById(transactionId);
-        return ResponseEntity.ok(transaction);
+    @Operation(summary = "Get one transaction by id (owner, or ADMIN/DEALER/COMPLIANCE_OFFICER/RISK_MANAGER)")
+    public ResponseEntity<TransactionDTO> getTransaction(
+            Authentication authentication,
+            @PathVariable Long transactionId) {
+        return ResponseEntity.ok(transactionService.getTransactionById(authentication.getName(), transactionId));
     }
 
     @GetMapping("/account/{accountId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<TransactionDTO>> getTransactionsByAccountId(@PathVariable Long accountId) {
-        List<TransactionDTO> transactions = transactionService.getTransactionsByAccountId(accountId);
-        return ResponseEntity.ok(transactions);
+    @Operation(summary = "List transactions for an account, optionally filtered (owner, or ADMIN/DEALER/COMPLIANCE_OFFICER/RISK_MANAGER)",
+            description = "All filters are optional. Omit them all for the full history.")
+    public ResponseEntity<List<TransactionDTO>> getTransactionsForAccount(
+            Authentication authentication,
+            @PathVariable Long accountId,
+            @Parameter(description = "Filter by BUY or SELL (DIVIDEND also valid if you use it elsewhere)")
+            @RequestParam(required = false) TransactionType type,
+            @Parameter(description = "Inclusive start date, e.g. 2026-01-01")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "Inclusive end date, e.g. 2026-12-31")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(transactionService.getTransactionsForAccount(
+                authentication.getName(), accountId, type, startDate, endDate));
     }
 
-    @GetMapping("/account/{accountId}/type/{transactionType}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<TransactionDTO>> getTransactionsByType(@PathVariable Long accountId,
-            @PathVariable String transactionType) {
-        List<TransactionDTO> transactions = transactionService.getTransactionsByType(accountId, transactionType);
-        return ResponseEntity.ok(transactions);
-    }
-
-    @GetMapping("/account/{accountId}/date-range")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<TransactionDTO>> getTransactionsByDateRange(@PathVariable Long accountId,
-            @RequestParam LocalDate startDate,
-            @RequestParam LocalDate endDate) {
-        List<TransactionDTO> transactions = transactionService.getTransactionsByDateRange(accountId, startDate,
-                endDate);
-        return ResponseEntity.ok(transactions);
-    }
-
-    @GetMapping("/account/{accountId}/security/{securityId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<TransactionDTO>> getTransactionsBySecurity(@PathVariable Long accountId,
-            @PathVariable Long securityId) {
-        List<TransactionDTO> transactions = transactionService.getTransactionsBySecurityAndAccount(accountId,
-                securityId);
-        return ResponseEntity.ok(transactions);
-    }
-
-    @GetMapping("/account/{accountId}/pending")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<TransactionDTO>> getPendingTransactions(@PathVariable Long accountId) {
-        List<TransactionDTO> transactions = transactionService.getPendingTransactionsByAccount(accountId);
-        return ResponseEntity.ok(transactions);
-    }
-
-    @GetMapping("/account/{accountId}/completed")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<TransactionDTO>> getCompletedTransactions(@PathVariable Long accountId) {
-        List<TransactionDTO> transactions = transactionService.getCompletedTransactionsByAccount(accountId);
-        return ResponseEntity.ok(transactions);
-    }
-
-    @GetMapping("/account/{accountId}/failed")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<TransactionDTO>> getFailedTransactions(@PathVariable Long accountId) {
-        List<TransactionDTO> transactions = transactionService.getFailedTransactionsByAccount(accountId);
-        return ResponseEntity.ok(transactions);
-    }
-
-    @PutMapping("/{transactionId}/status")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<TransactionDTO> updateTransactionStatus(@PathVariable Long transactionId,
-            @RequestParam String status) {
-        TransactionDTO transaction = transactionService.updateTransactionStatus(transactionId, status);
-        return ResponseEntity.ok(transaction);
-    }
-
-    @GetMapping("/account/{accountId}/summary")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Object> getTransactionSummary(@PathVariable Long accountId) {
-        Object summary = transactionService.getTransactionSummary(accountId);
-        return ResponseEntity.ok(summary);
-    }
-
-    @GetMapping("/account/{accountId}/export")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<TransactionDTO>> exportTransactions(@PathVariable Long accountId,
-            @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate) {
-        List<TransactionDTO> transactions = transactionService.exportTransactions(accountId, startDate, endDate);
-        return ResponseEntity.ok(transactions);
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','DEALER','COMPLIANCE_OFFICER','RISK_MANAGER')")
+    @Operation(summary = "List all transactions across all accounts (ADMIN/DEALER/COMPLIANCE_OFFICER/RISK_MANAGER only)")
+    public ResponseEntity<List<TransactionDTO>> getAllTransactions() {
+        return ResponseEntity.ok(transactionService.getAllTransactions());
     }
 }

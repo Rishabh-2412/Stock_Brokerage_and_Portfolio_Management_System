@@ -1,93 +1,76 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.OrderDTO;
 import com.example.backend.dto.request.PlaceOrderRequest;
 import com.example.backend.dto.response.OrderResponse;
 import com.example.backend.service.OrderService;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
- 
-import jakarta.validation.Valid;
+
 import java.util.List;
- 
+
+/**
+ * Placement/cancel endpoints are open to CLIENT, DEALER, ADMIN - ownership
+ * is enforced inside the service (CLIENT restricted to own accounts,
+ * DEALER/ADMIN unrestricted). Read-all is ADMIN/DEALER/COMPLIANCE_OFFICER/
+ * RISK_MANAGER only.
+ */
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+@Tag(name = "Orders", description = "Order placement and cancellation - does not execute trades yet")
+@SecurityRequirement(name = "bearerAuth")
 public class OrderController {
- 
-    @Autowired
-    private OrderService orderService;
- 
+
+    private final OrderService orderService;
+
     @PostMapping
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<OrderResponse> placeOrder(@Valid @RequestBody PlaceOrderRequest request) {
-        OrderResponse response = orderService.placeOrder(request);
+    @PreAuthorize("hasAnyRole('CLIENT','DEALER','ADMIN')")
+    @Operation(summary = "Place a new order",
+            description = "CLIENT: own accounts only. DEALER/ADMIN: any account. Order is recorded as PENDING - it is not executed here.")
+    public ResponseEntity<OrderResponse> placeOrder(
+            Authentication authentication,
+            @Valid @RequestBody PlaceOrderRequest request) {
+        OrderResponse response = orderService.placeOrder(authentication.getName(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
- 
+
+    @PostMapping("/{orderId}/cancel")
+    @PreAuthorize("hasAnyRole('CLIENT','DEALER','ADMIN')")
+    @Operation(summary = "Cancel a PENDING order")
+    public ResponseEntity<OrderResponse> cancelOrder(
+            Authentication authentication,
+            @PathVariable Long orderId) {
+        return ResponseEntity.ok(orderService.cancelOrder(authentication.getName(), orderId));
+    }
+
     @GetMapping("/{orderId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long orderId) {
-        OrderDTO order = orderService.getOrderById(orderId);
-        return ResponseEntity.ok(order);
+    @Operation(summary = "Get one order by id (owner, or ADMIN/DEALER/COMPLIANCE_OFFICER/RISK_MANAGER)")
+    public ResponseEntity<OrderResponse> getOrder(
+            Authentication authentication,
+            @PathVariable Long orderId) {
+        return ResponseEntity.ok(orderService.getOrderById(authentication.getName(), orderId));
     }
- 
+
     @GetMapping("/account/{accountId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<OrderDTO>> getOrdersByAccountId(@PathVariable Long accountId) {
-        List<OrderDTO> orders = orderService.getOrdersByAccountId(accountId);
-        return ResponseEntity.ok(orders);
+    @Operation(summary = "List all orders for an account (owner, or ADMIN/DEALER/COMPLIANCE_OFFICER/RISK_MANAGER)")
+    public ResponseEntity<List<OrderResponse>> getOrdersForAccount(
+            Authentication authentication,
+            @PathVariable Long accountId) {
+        return ResponseEntity.ok(orderService.getOrdersForAccount(authentication.getName(), accountId));
     }
- 
-    @GetMapping("/account/{accountId}/pending")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<OrderDTO>> getPendingOrdersByAccountId(@PathVariable Long accountId) {
-        List<OrderDTO> orders = orderService.getPendingOrdersByAccountId(accountId);
-        return ResponseEntity.ok(orders);
-    }
- 
-    @GetMapping("/security/{securityId}/account/{accountId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<OrderDTO>> getOrdersBySecurity(@PathVariable Long securityId, @PathVariable Long accountId) {
-        List<OrderDTO> orders = orderService.getOrdersBySecurityAndAccount(securityId, accountId);
-        return ResponseEntity.ok(orders);
-    }
- 
-    @PutMapping("/{orderId}/cancel")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<OrderDTO> cancelOrder(@PathVariable Long orderId) {
-        OrderDTO order = orderService.cancelOrder(orderId);
-        return ResponseEntity.ok(order);
-    }
- 
-    @PutMapping("/{orderId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<OrderDTO> updateOrder(@PathVariable Long orderId, @Valid @RequestBody OrderDTO orderDTO) {
-        OrderDTO updatedOrder = orderService.updateOrder(orderId, orderDTO);
-        return ResponseEntity.ok(updatedOrder);
-    }
- 
-    @GetMapping("/account/{accountId}/open")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<OrderDTO>> getOpenOrdersByAccountId(@PathVariable Long accountId) {
-        List<OrderDTO> orders = orderService.getOpenOrdersByAccountId(accountId);
-        return ResponseEntity.ok(orders);
-    }
- 
-    @DeleteMapping("/{orderId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<String> deleteOrder(@PathVariable Long orderId) {
-        orderService.deleteOrder(orderId);
-        return ResponseEntity.ok("Order deleted successfully");
-    }
- 
-    @GetMapping("/account/{accountId}/history")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<OrderDTO>> getOrderHistoryByAccountId(@PathVariable Long accountId) {
-        List<OrderDTO> orders = orderService.getOrderHistoryByAccountId(accountId);
-        return ResponseEntity.ok(orders);
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','DEALER','COMPLIANCE_OFFICER','RISK_MANAGER')")
+    @Operation(summary = "List all orders across all accounts (ADMIN/DEALER/COMPLIANCE_OFFICER/RISK_MANAGER only)")
+    public ResponseEntity<List<OrderResponse>> getAllOrders() {
+        return ResponseEntity.ok(orderService.getAllOrders());
     }
 }

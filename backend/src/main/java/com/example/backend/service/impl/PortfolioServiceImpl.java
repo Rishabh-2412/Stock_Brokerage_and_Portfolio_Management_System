@@ -1,136 +1,58 @@
 package com.example.backend.service.impl;
 
-import com.example.backend.dto.PortfolioDTO;
 import com.example.backend.dto.response.PortfolioResponse;
 import com.example.backend.entity.Account;
-import com.example.backend.entity.Holdings;
+import com.example.backend.entity.User;
+import com.example.backend.entity.enums.Role;
 import com.example.backend.exception.ResourceNotFoundException;
+import com.example.backend.exception.UnauthorisedAccessException;
 import com.example.backend.mapper.PortfolioMapper;
 import com.example.backend.repository.AccountRepository;
 import com.example.backend.repository.HoldingsRepository;
+import com.example.backend.repository.UserRepository;
 import com.example.backend.service.PortfolioService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
+/**
+ * Read-only. Every call recomputes everything fresh from Holdings +
+ * Security.currentPrice - nothing here is cached or stored, so the numbers
+ * are always live as of the moment you call this endpoint.
+ */
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PortfolioServiceImpl implements PortfolioService {
 
-    @Autowired
-    private AccountRepository accountRepository;
+    private static final Set<Role> READ_ALL_ROLES = Set.of(
+            Role.ADMIN, Role.DEALER, Role.COMPLIANCE_OFFICER, Role.RISK_MANAGER
+    );
 
-    @Autowired
-    private HoldingsRepository holdingsRepository;
-
-    @Autowired
-    private PortfolioMapper portfolioMapper;
-
-    @Override
-    public PortfolioResponse getPortfolio(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
-
-        List<Holdings> holdings = holdingsRepository.findByAccount(account);
-        
-        Double totalValue = holdings.stream()
-                .mapToDouble(Holdings::getCurrentValue)
-                .sum();
-
-        Double totalCost = holdings.stream()
-                .mapToDouble(h -> h.getAverageCost() * h.getQuantity())
-                .sum();
-
-        Double gainLoss = totalValue - totalCost;
-        Double gainLossPercentage = totalCost > 0 ? (gainLoss / totalCost) * 100 : 0;
-
-        PortfolioResponse response = new PortfolioResponse();
-        response.setAccountId(accountId);
-        response.setTotalPortfolioValue(totalValue);
-        response.setCashBalance(account.getCashAvailable());
-        response.setTotalInvested(totalCost);
-        response.setGainLoss(gainLoss);
-        response.setGainLossPercentage(gainLossPercentage);
-        response.setHoldings(holdings.stream()
-                .map(portfolioMapper::holdingsToDTO)
-                .collect(Collectors.toList()));
-
-        return response;
-    }
+    private final AccountRepository accountRepository;
+    private final HoldingsRepository holdingsRepository;
+    private final UserRepository userRepository;
 
     @Override
-    public PortfolioDTO getPortfolioDTO(Long accountId) {
+    public PortfolioResponse getPortfolio(String username, Long accountId) {
+        User user = getUserOrThrow(username);
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + accountId));
 
-        List<Holdings> holdings = holdingsRepository.findByAccount(account);
-        
-        return portfolioMapper.toDTO(account, holdings);
-    }
+        boolean isOwner = account.getUser().getId().equals(user.getId());
+        boolean canReadAny = READ_ALL_ROLES.contains(user.getRole());
 
-    @Override
-    public Double getPortfolioValue(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
-
-        List<Holdings> holdings = holdingsRepository.findByAccount(account);
-        
-        return holdings.stream()
-                .mapToDouble(Holdings::getCurrentValue)
-                .sum();
-    }
-
-    @Override
-    public Double getTotalGainLoss(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
-
-        List<Holdings> holdings = holdingsRepository.findByAccount(account);
-        
-        Double totalValue = holdings.stream()
-                .mapToDouble(Holdings::getCurrentValue)
-                .sum();
-
-        Double totalCost = holdings.stream()
-                .mapToDouble(h -> h.getAverageCost() * h.getQuantity())
-                .sum();
-
-        return totalValue - totalCost;
-    }
-
-    @Override
-    public Double getGainLossPercentage(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
-
-        List<Holdings> holdings = holdingsRepository.findByAccount(account);
-        
-        Double totalCost = holdings.stream()
-                .mapToDouble(h -> h.getAverageCost() * h.getQuantity())
-                .sum();
-
-        if (totalCost == 0) {
-            return 0.0;
+        if (!isOwner && !canReadAny) {
+            throw new UnauthorisedAccessException("You do not have access to this account's portfolio");
         }
 
-        Double gainLoss = getTotalGainLoss(accountId);
-        return (gainLoss / totalCost) * 100;
+        return PortfolioMapper.toResponse(accountId, holdingsRepository.findByAccountId(accountId));
     }
 
-    @Override
-    public List<Holdings> getHoldings(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
-
-        return holdingsRepository.findByAccount(account);
-    }
-
-    @Override
-    public void rebalancePortfolio(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
-
-        List<Holdings> holdings = holdingsRepository.findByAccount(account);
-        // Rebalancing logic implementation
+    private User getUserOrThrow(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
 }

@@ -1,65 +1,53 @@
 package com.example.backend.entity;
- 
+
+import com.example.backend.entity.enums.AccountStatus;
+import com.example.backend.entity.enums.AccountType;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
-import java.util.List;
- 
+
+/**
+ * Trading account belonging to a User. Matches the real entity/User.java
+ * built in Module 1 (Auth & Users) - user.getId() and user.getRole() are
+ * both used below in the service layer.
+ */
 @Entity
-@Table(name = "accounts", uniqueConstraints = {
-    @UniqueConstraint(columnNames = "account_number")
-})
-@Data
+@Table(name = "accounts")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = {"user", "holdings", "transactions", "orders", "watchlist"})
+@Builder
 public class Account extends BaseEntity {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long accountId;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @NotNull
     private User user;
-    
-    @Column(nullable = false, unique = true)
+
+    @Column(name = "account_number", nullable = false, unique = true, length = 20)
     private String accountNumber;
-    
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private AccountType accountType; // CASH, MARGIN, DEMO
-    
-    @Column(nullable = false)
-    private BigDecimal balance;
-    
-    @Column(nullable = false)
-    private BigDecimal cashAvailable;
-    
+    @Column(name = "account_type", nullable = false, length = 20)
+    private AccountType accountType;
+
+    @Column(name = "balance", nullable = false, precision = 19, scale = 4)
+    @Builder.Default
+    private BigDecimal balance = BigDecimal.ZERO;
+
+    @Column(name = "cash_available", nullable = false, precision = 19, scale = 4)
+    @Builder.Default
+    private BigDecimal cashAvailable = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private AccountStatus status; // ACTIVE, INACTIVE, SUSPENDED
-    
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Holdings> holdings;
-    
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Transaction> transactions;
-    
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Order> orders;
-    
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Watchlist> watchlist;
-    
-    public enum AccountType {
-        CASH, MARGIN, DEMO
-    }
-    
-    public enum AccountStatus {
-        ACTIVE, INACTIVE, SUSPENDED
-    }
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private AccountStatus status = AccountStatus.ACTIVE;
 }

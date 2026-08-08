@@ -1,47 +1,30 @@
 package com.example.backend.mapper;
 
-import com.example.backend.dto.OrderDTO;
+import com.example.backend.dto.response.OrderResponse;
 import com.example.backend.entity.Order;
-import org.springframework.stereotype.Component;
 
-@Component
 public class OrderMapper {
 
-    public OrderDTO toDTO(Order order) {
+    private OrderMapper() {
+    }
+
+    public static OrderResponse toResponse(Order order) {
         if (order == null) {
             return null;
         }
-
-        OrderDTO orderDTO = new OrderDTO();
-        orderDTO.setOrderId(order.getOrderId());
-        orderDTO.setAccountId(order.getAccountId());
-        orderDTO.setSecurityId(order.getSecurityId());
-        orderDTO.setOrderType(order.getOrderType());
-        orderDTO.setOrderStatus(order.getOrderStatus());
-        orderDTO.setQuantity(order.getQuantity());
-        orderDTO.setPrice(order.getPrice());
-        orderDTO.setFilledQuantity(order.getFilledQuantity());
-        orderDTO.setCreatedAt(order.getCreatedAt());
-        orderDTO.setUpdatedAt(order.getUpdatedAt());
-
-        return orderDTO;
-    }
-
-    public Order toEntity(OrderDTO orderDTO) {
-        if (orderDTO == null) {
-            return null;
-        }
-
-        Order order = new Order();
-        order.setOrderId(orderDTO.getOrderId());
-        order.setAccountId(orderDTO.getAccountId());
-        order.setSecurityId(orderDTO.getSecurityId());
-        order.setOrderType(orderDTO.getOrderType());
-        order.setOrderStatus(orderDTO.getOrderStatus());
-        order.setQuantity(orderDTO.getQuantity());
-        order.setPrice(orderDTO.getPrice());
-        order.setFilledQuantity(orderDTO.getFilledQuantity());
-
-        return order;
+        return OrderResponse.builder()
+                .orderId(order.getId())
+                .accountId(order.getAccount() != null ? order.getAccount().getId() : null)
+                .securityId(order.getSecurity() != null ? order.getSecurity().getId() : null)
+                .symbol(order.getSecurity() != null ? order.getSecurity().getSymbol() : null)
+                .orderType(order.getOrderType())
+                .priceType(order.getPriceType())
+                .orderStatus(order.getOrderStatus())
+                .quantity(order.getQuantity())
+                .price(order.getPrice())
+                .filledQuantity(order.getFilledQuantity())
+                .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
+                .build();
     }
 }
