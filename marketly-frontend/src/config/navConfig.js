@@ -10,6 +10,7 @@ const CLIENT_NAV = [
   { label: "Portfolio Analytics", path: "/analytics", icon: "📈" },
   { label: "Transaction History", path: "/transactions", icon: "🧾" },
   { label: "Research & Reports", path: "/research", icon: "📰" },
+  { label: "Funds", path: "/funds", icon: "💰" },
   { label: "Profile", path: "/profile", icon: "👤" },
 ];
 

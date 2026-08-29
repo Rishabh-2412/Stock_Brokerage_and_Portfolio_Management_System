@@ -1018,3 +1018,291 @@ body {
   border-radius: 8px;
   padding: 0.4rem 0.8rem;
 }
+
+/* ===== Funds page ===== */
+
+.funds-page {
+  max-width: 640px;
+}
+
+/* --- Balance hero card --- */
+
+.funds-hero {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #4a3aff 0%, #6a5cff 100%);
+  border-radius: 16px;
+  padding: 1.75rem 2rem;
+  color: #fff;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 12px 28px rgba(74, 58, 255, 0.25);
+}
+
+.funds-hero-main {
+  flex: 1;
+}
+
+.funds-hero-label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.funds-hero-value {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+
+.funds-hero-account {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.funds-hero-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255, 255, 255, 0.25);
+  margin: 0 1.75rem;
+}
+
+.funds-hero-side-value {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+/* --- Status warning --- */
+
+.funds-status-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.funds-status-warning svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+/* --- Transfer panel with tabs --- */
+
+.funds-transfer-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.funds-tabs {
+  display: flex;
+  border-bottom: 1px solid #eee;
+}
+
+.funds-tab {
+  flex: 1;
+  padding: 0.9rem;
+  background: none;
+  border: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #999;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.funds-tab:hover {
+  color: #555;
+}
+
+.funds-tab-active {
+  color: #2f3ee0;
+  border-bottom-color: #2f3ee0;
+}
+
+.funds-form {
+  padding: 1.5rem;
+}
+
+.funds-form label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 1.1rem 0 0.4rem 0;
+  color: #444;
+}
+
+.funds-form label:first-child {
+  margin-top: 0;
+}
+
+.funds-form input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+/* --- Amount input with currency prefix --- */
+
+.funds-amount-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.funds-currency-prefix {
+  position: absolute;
+  left: 0.85rem;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 600;
+  color: #666;
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+
+.funds-amount-input {
+  padding-left: 1.9rem !important;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.1rem !important;
+  font-weight: 600;
+}
+
+/* --- Quick amount chips --- */
+
+.funds-quick-amounts {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.funds-quick-chip {
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  background: #fafafc;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.funds-quick-chip:hover {
+  border-color: #4a3aff;
+  color: #4a3aff;
+}
+
+.funds-available-hint {
+  margin-top: 0.9rem;
+  font-size: 0.82rem;
+  color: #777;
+  background: #f7f7fb;
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+}
+
+/* --- Submit buttons --- */
+
+.funds-submit-btn {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.85rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #fff;
+  transition: transform 0.1s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.funds-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.funds-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.funds-submit-deposit {
+  background: #00c48c;
+  box-shadow: 0 8px 18px rgba(0, 196, 140, 0.25);
+}
+
+.funds-submit-withdraw {
+  background: #4a3aff;
+  box-shadow: 0 8px 18px rgba(74, 58, 255, 0.25);
+}
+
+/* --- Success state --- */
+
+.funds-success {
+  text-align: center;
+  padding: 2.5rem 2rem;
+}
+
+.funds-success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #e7f8ef;
+  color: #00c48c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+}
+
+.funds-success h2 {
+  margin-bottom: 0.3rem;
+}
+
+.funds-success-balances {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin: 1.5rem 0;
+}
+
+.funds-success-amount {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #14142b;
+}
+
+.funds-success .primary-btn {
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 560px) {
+  .funds-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .funds-hero-divider {
+    display: none;
+  }
+
+  .funds-success-balances {
+    gap: 2rem;
+  }
+}

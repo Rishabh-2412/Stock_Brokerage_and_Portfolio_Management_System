@@ -18,6 +18,7 @@ import StockDetails from "./pages/stocks/StockDetails";
 import PortfolioAnalytics from "./pages/analytics/PortfolioAnalytics";
 import TransactionHistory from "./pages/transactions/TransactionHistory";
 import Profile from "./pages/profile/Profile";
+import Funds from "./pages/funds/Funds";
 import ResearchNotes from "./pages/research/ResearchNotes";
 import UserManagement from "./pages/admin/users/UserManagement";
 import AccountManagement from "./pages/admin/accounts/AccountManagement";
@@ -62,6 +63,7 @@ function App() {
               <Route path="/analytics" element={<PortfolioAnalytics />} />
               <Route path="/transactions" element={<TransactionHistory />} />
               <Route path="/research" element={<ResearchNotes />} />
+              <Route path="/funds" element={<Funds />} />
               <Route path="/profile" element={<Profile />} />
 
               {/* ADMIN only */}

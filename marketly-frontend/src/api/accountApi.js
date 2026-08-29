@@ -31,6 +31,30 @@ export async function createAccount(accountType, initialDeposit) {
   return response.data;
 }
 
+// Deposit or withdraw funds on an account. transferType MUST be exactly
+// "DEPOSIT" or "WITHDRAWAL" (confirmed from AccountServiceImpl's switch
+// statement — anything else, including "WITHDRAW", throws a 400
+// IllegalArgumentException). Route is under /accounts, not top-level /fund.
+// Returns the updated AccountDTO (new balance/cashAvailable).
+export async function transferFunds({
+  accountId,
+  transferType, // "DEPOSIT" | "WITHDRAWAL"
+  amount,
+  description,
+  bankAccountNumber,
+  transactionReference,
+}) {
+  const response = await apiClient.post("/accounts/fund", {
+    accountId,
+    transferType,
+    amount,
+    description,
+    ...(bankAccountNumber ? { bankAccountNumber } : {}),
+    ...(transactionReference ? { transactionReference } : {}),
+  });
+  return response.data; // updated AccountDTO
+}
+
 export async function getAllAccounts() {
   const response = await apiClient.get("/accounts");
   return response.data; // array of AccountDTO
