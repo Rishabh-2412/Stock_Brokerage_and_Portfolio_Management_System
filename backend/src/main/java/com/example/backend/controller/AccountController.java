@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.AccountDTO;
+import com.example.backend.dto.request.FundTransferRequest;
 import com.example.backend.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -32,6 +33,18 @@ public class AccountController {
             @Valid @RequestBody AccountDTO request) {
         AccountDTO response = accountService.createAccount(authentication.getName(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/fund")
+    @Operation(
+        summary = "Deposit or withdraw funds from an account",
+        description = "Uses FundTransferRequest. transferType must be DEPOSIT or WITHDRAWAL."
+    )
+    public ResponseEntity<AccountDTO> fundAccount(
+            Authentication authentication,
+            @Valid @RequestBody FundTransferRequest request) {
+        AccountDTO response = accountService.fundAccount(authentication.getName(), request);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me")

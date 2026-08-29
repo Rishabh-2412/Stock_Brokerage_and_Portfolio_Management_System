@@ -1,12 +1,15 @@
 package com.example.backend.service;
 
 import com.example.backend.dto.AccountDTO;
+import com.example.backend.dto.request.FundTransferRequest;
 
 import java.util.List;
 
 public interface AccountService {
 
     AccountDTO createAccount(String username, AccountDTO request);
+
+    AccountDTO fundAccount(String username, FundTransferRequest request);
 
     AccountDTO getAccountById(String username, Long accountId);
 

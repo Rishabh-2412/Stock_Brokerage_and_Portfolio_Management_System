@@ -1,0 +1,74 @@
+# =========================
+# Backend - Spring Boot
+# =========================
+
+/backend/HELP.md
+/backend/target/
+/backend/.mvn/wrapper/maven-wrapper.jar
+!/backend/**/src/main/**/target/
+!/backend/**/src/test/**/target/
+
+# Maven
+/backend/.mvn/
+!/backend/.mvn/wrapper/maven-wrapper.jar
+
+# STS / Eclipse
+/backend/.apt_generated/
+/backend/.classpath
+/backend/.factorypath
+/backend/.project
+/backend/.settings/
+/backend/.springBeans
+/backend/.sts4-cache
+
+# IntelliJ IDEA
+/backend/.idea/
+/backend/*.iws
+/backend/*.iml
+/backend/*.ipr
+
+# NetBeans
+/backend/nbproject/private/
+/backend/nbbuild/
+/backend/dist/
+/backend/nbdist/
+/backend/.nb-gradle/
+/backend/build/
+!/backend/**/src/main/**/build/
+!/backend/**/src/test/**/build/
+
+# VS Code
+/backend/.vscode/
+
+
+# =========================
+# Frontend - React
+# =========================
+
+/marketly-frontend/node_modules/
+/marketly-frontend/.env
+/marketly-frontend/.env.local
+/marketly-frontend/.env.development.local
+/marketly-frontend/.env.test.local
+/marketly-frontend/.env.production.local
+
+# React build
+/marketly-frontend/build/
+/marketly-frontend/dist/
+
+# Testing
+/marketly-frontend/coverage/
+
+# Logs
+/marketly-frontend/npm-debug.log*
+/marketly-frontend/yarn-debug.log*
+/marketly-frontend/yarn-error.log*
+/marketly-frontend/pnpm-debug.log*
+
+# Editor
+/marketly-frontend/.vscode/
+/marketly-frontend/.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,10 +1,12 @@
 package com.example.backend.service.impl;
 
 import com.example.backend.dto.AccountDTO;
+import com.example.backend.dto.request.FundTransferRequest;
 import com.example.backend.entity.Account;
 import com.example.backend.entity.User;
 import com.example.backend.entity.enums.AccountStatus;
 import com.example.backend.entity.enums.Role;
+import com.example.backend.exception.InsufficientMarginException;
 import com.example.backend.exception.ResourceNotFoundException;
 import com.example.backend.exception.UnauthorisedAccessException;
 import com.example.backend.mapper.AccountMapper;
@@ -45,6 +47,39 @@ public class AccountServiceImpl implements AccountService {
                 .cashAvailable(request.getBalance()) // initial deposit = starting cash available
                 .status(AccountStatus.ACTIVE)
                 .build();
+
+        return AccountMapper.toDTO(accountRepository.save(account));
+    }
+
+    @Override
+    public AccountDTO fundAccount(String username, FundTransferRequest request) {
+        User user = getUserOrThrow(username);
+        Account account = getAccountOrThrow(request.getAccountId());
+
+        boolean isOwner = account.getUser().getId().equals(user.getId());
+        if (!isOwner) {
+            throw new UnauthorisedAccessException("You do not have access to this account");
+        }
+
+        String type = request.getTransferType() == null ? "" : request.getTransferType().trim().toUpperCase();
+
+        switch (type) {
+            case "DEPOSIT":
+                account.setBalance(account.getBalance().add(request.getAmount()));
+                account.setCashAvailable(account.getCashAvailable().add(request.getAmount()));
+                break;
+
+            case "WITHDRAWAL":
+                if (account.getCashAvailable().compareTo(request.getAmount()) < 0) {
+                    throw new InsufficientMarginException("Insufficient funds in account");
+                }
+                account.setBalance(account.getBalance().subtract(request.getAmount()));
+                account.setCashAvailable(account.getCashAvailable().subtract(request.getAmount()));
+                break;
+
+            default:
+                throw new IllegalArgumentException("transferType must be DEPOSIT or WITHDRAWAL");
+        }
 
         return AccountMapper.toDTO(accountRepository.save(account));
     }
