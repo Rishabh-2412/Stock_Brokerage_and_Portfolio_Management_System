@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useFetch } from "../../../hooks/useFetch";
-import { getAllUsers, createUser } from "../../../api/authApi";
+import { getAllUsers, createUser, updateKycStatus } from "../../../api/authApi";
 import { LoadingState, ErrorState } from "../../../components/StatusStates";
 
 const ROLES = ["ADMIN", "CLIENT", "DEALER", "RESEARCH_ANALYST", "COMPLIANCE_OFFICER", "RISK_MANAGER"];
@@ -9,8 +9,23 @@ const CATEGORIES = ["INDIVIDUAL", "INSTITUTIONAL"];
 export default function UserManagement() {
   const { data, isLoading, error, refetch } = useFetch(() => getAllUsers(), []);
   const [showForm, setShowForm] = useState(false);
+  const [kycUpdatingId, setKycUpdatingId] = useState(null);
+  const [kycError, setKycError] = useState("");
 
   const users = data ?? [];
+
+  async function handleKycAction(userId, kycStatus) {
+    setKycError("");
+    setKycUpdatingId(userId);
+    try {
+      await updateKycStatus(userId, kycStatus);
+      refetch();
+    } catch (err) {
+      setKycError(err.response?.data?.message || "Failed to update KYC status.");
+    } finally {
+      setKycUpdatingId(null);
+    }
+  }
 
   return (
     <div>
@@ -38,6 +53,8 @@ export default function UserManagement() {
           <p className="muted">No users found.</p>
         )}
 
+        {kycError && <div className="error-message">{kycError}</div>}
+
         {!isLoading && users.length > 0 && (
           <table className="simple-table">
             <thead>
@@ -58,13 +75,59 @@ export default function UserManagement() {
                   <td>
                     <span className="role-pill">{u.role}</span>
                   </td>
-                  <td>{u.kycStatus || "—"}</td>
+                  <td>
+                    <KycStatusCell
+                      user={u}
+                      isUpdating={kycUpdatingId === u.userId}
+                      onApprove={() => handleKycAction(u.userId, "APPROVED")}
+                      onReject={() => handleKycAction(u.userId, "REJECTED")}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+    </div>
+  );
+}
+
+function KycStatusCell({ user, isUpdating, onApprove, onReject }) {
+  const status = user.kycStatus || "—";
+  const badgeClass =
+    status === "APPROVED"
+      ? "status-approved"
+      : status === "REJECTED"
+      ? "status-rejected"
+      : status === "PENDING"
+      ? "status-pending"
+      : "";
+
+  return (
+    <div className="kyc-cell">
+      <span className={`status-badge ${badgeClass}`}>{status}</span>
+
+      {status === "PENDING" && (
+        <span className="kyc-actions">
+          <button
+            type="button"
+            className="kyc-approve-btn"
+            disabled={isUpdating}
+            onClick={onApprove}
+          >
+            {isUpdating ? "..." : "Approve"}
+          </button>
+          <button
+            type="button"
+            className="kyc-reject-btn"
+            disabled={isUpdating}
+            onClick={onReject}
+          >
+            {isUpdating ? "..." : "Reject"}
+          </button>
+        </span>
+      )}
     </div>
   );
 }

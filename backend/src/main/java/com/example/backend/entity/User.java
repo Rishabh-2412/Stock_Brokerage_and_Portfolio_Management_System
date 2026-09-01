@@ -52,5 +52,5 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "kyc_status", nullable = false, length = 20)
     @Builder.Default
-    private KycStatus kycStatus = KycStatus.APPROVED;
+    private KycStatus kycStatus = KycStatus.PENDING;
 }

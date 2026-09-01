@@ -49,7 +49,7 @@ public class AuthServiceImpl implements AuthService {
                 .phone(request.getPhone())
                 .role(Role.CLIENT) // self-registration is always CLIENT - see RegisterRequest javadoc
                 .accountType(request.getAccountType() != null ? request.getAccountType() : UserCategory.INDIVIDUAL)
-                .kycStatus(KycStatus.APPROVED) // mini-project: no real KYC flow
+                .kycStatus(KycStatus.PENDING) // must be approved by an ADMIN before funding/trading
                 .build();
 
         return UserMapper.toResponse(userRepository.save(user));

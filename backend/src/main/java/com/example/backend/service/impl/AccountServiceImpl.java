@@ -5,8 +5,10 @@ import com.example.backend.dto.request.FundTransferRequest;
 import com.example.backend.entity.Account;
 import com.example.backend.entity.User;
 import com.example.backend.entity.enums.AccountStatus;
+import com.example.backend.entity.enums.KycStatus;
 import com.example.backend.entity.enums.Role;
 import com.example.backend.exception.InsufficientMarginException;
+import com.example.backend.exception.KycNotApprovedException;
 import com.example.backend.exception.ResourceNotFoundException;
 import com.example.backend.exception.UnauthorisedAccessException;
 import com.example.backend.mapper.AccountMapper;
@@ -59,6 +61,11 @@ public class AccountServiceImpl implements AccountService {
         boolean isOwner = account.getUser().getId().equals(user.getId());
         if (!isOwner) {
             throw new UnauthorisedAccessException("You do not have access to this account");
+        }
+
+        if (user.getKycStatus() != KycStatus.APPROVED) {
+            throw new KycNotApprovedException(
+                    "KYC not approved - you cannot deposit or withdraw funds until an admin approves your account");
         }
 
         String type = request.getTransferType() == null ? "" : request.getTransferType().trim().toUpperCase();

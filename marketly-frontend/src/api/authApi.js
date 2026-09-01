@@ -51,3 +51,9 @@ export async function createUser(userData) {
   const response = await apiClient.post("/users", userData);
   return response.data;
 }
+
+export async function updateKycStatus(userId, kycStatus) {
+  // kycStatus: "APPROVED" | "REJECTED"
+  const response = await apiClient.patch(`/users/${userId}/kyc-status`, { kycStatus });
+  return response.data; // UserResponse
+}

@@ -7,12 +7,14 @@ import com.example.backend.entity.Order;
 import com.example.backend.entity.Security;
 import com.example.backend.entity.User;
 import com.example.backend.entity.enums.AccountStatus;
+import com.example.backend.entity.enums.KycStatus;
 import com.example.backend.entity.enums.OrderStatus;
 import com.example.backend.entity.enums.OrderType;
 import com.example.backend.entity.enums.PriceType;
 import com.example.backend.entity.enums.Role;
 import com.example.backend.exception.InsufficientMarginException;
 import com.example.backend.exception.InvalidOrderException;
+import com.example.backend.exception.KycNotApprovedException;
 import com.example.backend.exception.ResourceNotFoundException;
 import com.example.backend.exception.UnauthorisedAccessException;
 import com.example.backend.mapper.OrderMapper;
@@ -67,6 +69,14 @@ public class OrderServiceImpl implements OrderService {
 
         if (account.getStatus() != AccountStatus.ACTIVE) {
             throw new InvalidOrderException("Account is not active: " + account.getStatus());
+        }
+        
+        // Check the ACCOUNT OWNER's KYC status, not the caller's - a DEALER/ADMIN
+        // placing an order on behalf of a client is still blocked if that client
+        // isn't verified yet.
+        if (account.getUser().getKycStatus() != KycStatus.APPROVED) {
+            throw new KycNotApprovedException(
+                    "KYC not approved for this account's owner - orders cannot be placed until verified");
         }
 
         Security security = securityRepository.findById(request.getSecurityId())

@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import com.example.backend.dto.request.CreateUserRequest;
+import com.example.backend.dto.request.UpdateKycStatusRequest;
 import com.example.backend.dto.request.UpdateProfileRequest;
 import com.example.backend.dto.response.UserResponse;
 
@@ -17,4 +18,6 @@ public interface UserService {
     UserResponse getUserById(Long userId);
 
     UserResponse createUser(CreateUserRequest request);
+
+    UserResponse updateKycStatus(Long userId, UpdateKycStatusRequest request);
 }

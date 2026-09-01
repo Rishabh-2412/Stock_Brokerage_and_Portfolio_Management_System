@@ -1306,3 +1306,58 @@ body {
     gap: 2rem;
   }
 }
+
+/* ===== KYC Status (User Management - admin approve/reject) ===== */
+
+.status-approved {
+  background: #e7f8ef;
+  color: #1a9e5c;
+}
+
+.status-pending {
+  background: #fff6e0;
+  color: #b8860b;
+}
+
+.status-rejected {
+  background: #fdecea;
+  color: #d13c3c;
+}
+
+.kyc-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.kyc-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.kyc-approve-btn,
+.kyc-reject-btn {
+  padding: 0.3rem 0.7rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.kyc-approve-btn {
+  background: #1a9e5c;
+  color: #fff;
+}
+
+.kyc-reject-btn {
+  background: #d13c3c;
+  color: #fff;
+}
+
+.kyc-approve-btn:disabled,
+.kyc-reject-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

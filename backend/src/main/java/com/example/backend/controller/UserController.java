@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.request.CreateUserRequest;
+import com.example.backend.dto.request.UpdateKycStatusRequest;
 import com.example.backend.dto.request.UpdateProfileRequest;
 import com.example.backend.dto.response.UserResponse;
 import com.example.backend.service.UserService;
@@ -59,5 +60,14 @@ public class UserController {
     @Operation(summary = "Create a user with any role, e.g. DEALER/ADMIN (ADMIN only)")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(request));
+    }
+
+    @PatchMapping("/{userId}/kyc-status")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Approve or reject a user's KYC status (ADMIN only)")
+    public ResponseEntity<UserResponse> updateKycStatus(
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateKycStatusRequest request) {
+        return ResponseEntity.ok(userService.updateKycStatus(userId, request));
     }
 }

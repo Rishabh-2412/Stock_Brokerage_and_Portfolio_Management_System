@@ -1,6 +1,7 @@
 package com.example.backend.service.impl;
 
 import com.example.backend.dto.request.CreateUserRequest;
+import com.example.backend.dto.request.UpdateKycStatusRequest;
 import com.example.backend.dto.request.UpdateProfileRequest;
 import com.example.backend.dto.response.UserResponse;
 import com.example.backend.entity.User;
@@ -81,6 +82,16 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toResponse(userRepository.save(user));
     }
 
+    @Override
+    public UserResponse updateKycStatus(Long userId, UpdateKycStatusRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+ 
+        user.setKycStatus(request.getKycStatus());
+ 
+        return UserMapper.toResponse(userRepository.save(user));
+    }
+ 
     private User getUserByUsernameOrThrow(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
