@@ -1,20 +1,12 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from "recharts";
 import { useFetch } from "../../hooks/useFetch";
 import { getSecurityById } from "../../api/securityApi";
 import { getPriceHistory } from "../../api/marketApi";
 import { getWatchlist, addToWatchlist, removeFromWatchlist } from "../../api/watchlistApi";
 import { useAccount } from "../../context/AccountContext";
 import { LoadingState, ErrorState } from "../../components/StatusStates";
+import CandlestickChart from "../../components/CandlestickChart";
 import { formatCurrency } from "../../utils/format";
 
 export default function StockDetails() {
@@ -51,9 +43,11 @@ export default function StockDetails() {
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .map((row) => ({
       date: row.date,
+      open: Number(row.openPrice),
       close: Number(row.closePrice),
       high: Number(row.highPrice),
       low: Number(row.lowPrice),
+      volume: row.volume != null ? Number(row.volume) : null,
     }));
   const watchlistEntry = (watchlistQuery.data ?? []).find(
     (w) => w.securityId === security.securityId
@@ -136,35 +130,7 @@ export default function StockDetails() {
       {!historyLoading && !historyError && chartData.length > 1 && (
         <div className="panel chart-panel">
           <h3>Price Chart</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="closeGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis
-                tick={{ fontSize: 12 }}
-                domain={["auto", "auto"]}
-                tickFormatter={(value) => `₹${value}`}
-              />
-              <Tooltip formatter={(value) => formatCurrency(value)} />
-              <Area
-                type="monotone"
-                dataKey="close"
-                name="Close Price"
-                stroke="#6366f1"
-                strokeWidth={2.5}
-                fill="url(#closeGradient)"
-                isAnimationActive={true}
-                animationDuration={900}
-                animationEasing="ease-out"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <CandlestickChart data={chartData} height={280} />
         </div>
       )}
 

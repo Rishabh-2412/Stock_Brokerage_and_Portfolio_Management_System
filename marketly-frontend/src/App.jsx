@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
 import { AccountProvider } from "./context/AccountContext";
 import RequireAuth from "./routes/RequireAuth";
@@ -33,8 +34,9 @@ import "./App.css";
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Landing />} />
@@ -101,8 +103,9 @@ function App() {
               redirect to /login if not signed in). */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useAccount } from "../context/AccountContext";
 import { getNavForRole } from "../config/navConfig";
+import ThemeToggle from "../components/ThemeToggle";
 
 // This layout renders once and stays mounted while child pages
 // (Dashboard, Portfolio, etc.) swap in and out via <Outlet />.
@@ -37,7 +38,9 @@ export default function AppLayout() {
                 isActive ? "nav-item nav-item-active" : "nav-item"
               }
             >
-              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-icon" style={{ background: item.color }}>
+                {item.icon}
+              </span>
               {item.label}
             </NavLink>
           ))}
@@ -71,6 +74,7 @@ export default function AppLayout() {
             )}
             <span>{user?.username}</span>
             <span className="role-badge">{role}</span>
+            <ThemeToggle />
           </div>
         </header>
 

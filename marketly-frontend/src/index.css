@@ -1,3 +1,32 @@
+:root {
+  /* Light theme (default) */
+  --bg-page: #f5f6fa;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f2f3fb;
+  --border-color: #e5e5ea;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --shadow-color: rgba(0, 0, 0, 0.06);
+
+  color-scheme: light;
+}
+
+/* Dark theme: intentionally dark GRAY, never pure black (#000), so panels
+   still read as distinct layered surfaces instead of a flat void. */
+[data-theme="dark"] {
+  --bg-page: #1c1c22;
+  --bg-surface: #26262e;
+  --bg-surface-alt: #303039;
+  --border-color: #3c3c46;
+  --text-primary: #e8e8ec;
+  --text-secondary: #aaaab3;
+  --text-tertiary: #85858f;
+  --shadow-color: rgba(0, 0, 0, 0.35);
+
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -11,8 +40,9 @@ html, body {
 
 body {
   font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
-  color: #1a1a1a;
-  background: #f5f6fa;
+  color: var(--text-primary);
+  background: var(--bg-page);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #root {
@@ -22,7 +52,7 @@ body {
 
 h1, h2, h3 {
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary);
   margin: 0;
 }
 

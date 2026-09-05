@@ -58,4 +58,13 @@ public class PortfolioDTO {
 
     @Schema(example = "1.20", description = "unrealizedPL as a percentage of costBasis")
     private BigDecimal unrealizedPLPercent;
+
+    @Schema(example = "3820.00", description = "Security's closing price on the last trading day before today. Falls back to currentPrice (making todaysPL 0) if no earlier price_history row exists.")
+    private BigDecimal previousClose;
+
+    @Schema(example = "255.00", description = "(currentPrice - previousClose) * quantity - the actual day's move, unlike unrealizedPL which is since purchase")
+    private BigDecimal todaysPL;
+
+    @Schema(example = "0.67", description = "todaysPL as a percentage of yesterday's value (previousClose * quantity)")
+    private BigDecimal todaysPLPercent;
 }

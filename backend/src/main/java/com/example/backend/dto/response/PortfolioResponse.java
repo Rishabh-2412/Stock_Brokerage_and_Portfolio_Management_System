@@ -32,11 +32,17 @@ public class PortfolioResponse {
     @Schema(example = "97120.00")
     private BigDecimal totalCurrentValue;
 
-    @Schema(example = "2120.00")
+    @Schema(example = "2120.00", description = "Total unrealized gain/loss since purchase - NOT today's change")
     private BigDecimal totalUnrealizedPL;
 
     @Schema(example = "2.23")
     private BigDecimal totalUnrealizedPLPercent;
+
+    @Schema(example = "610.00", description = "Sum of each holding's todaysPL - the account's actual day change")
+    private BigDecimal totalTodaysPL;
+
+    @Schema(example = "0.63", description = "totalTodaysPL as a percentage of yesterday's total portfolio value")
+    private BigDecimal totalTodaysPLPercent;
 
     private List<PortfolioDTO> holdings;
 }

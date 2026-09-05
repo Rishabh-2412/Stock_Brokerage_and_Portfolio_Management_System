@@ -2,6 +2,8 @@ package com.example.backend.service.impl;
 
 import com.example.backend.dto.response.PortfolioResponse;
 import com.example.backend.entity.Account;
+import com.example.backend.entity.Holdings;
+import com.example.backend.entity.PriceHistory;
 import com.example.backend.entity.User;
 import com.example.backend.entity.enums.Role;
 import com.example.backend.exception.ResourceNotFoundException;
@@ -9,12 +11,18 @@ import com.example.backend.exception.UnauthorisedAccessException;
 import com.example.backend.mapper.PortfolioMapper;
 import com.example.backend.repository.AccountRepository;
 import com.example.backend.repository.HoldingsRepository;
+import com.example.backend.repository.PriceHistoryRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.service.PortfolioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -34,6 +42,7 @@ public class PortfolioServiceImpl implements PortfolioService {
     private final AccountRepository accountRepository;
     private final HoldingsRepository holdingsRepository;
     private final UserRepository userRepository;
+    private final PriceHistoryRepository priceHistoryRepository;
 
     @Override
     public PortfolioResponse getPortfolio(String username, Long accountId) {
@@ -48,7 +57,43 @@ public class PortfolioServiceImpl implements PortfolioService {
             throw new UnauthorisedAccessException("You do not have access to this account's portfolio");
         }
 
-        return PortfolioMapper.toResponse(accountId, holdingsRepository.findByAccountId(accountId));
+        List<Holdings> holdings = holdingsRepository.findByAccountId(accountId);
+        Map<Long, BigDecimal> previousCloseBySecurityId = buildPreviousCloseLookup(holdings);
+
+        return PortfolioMapper.toResponse(accountId, holdings, previousCloseBySecurityId);
+    }
+
+    /**
+     * One lookup per DISTINCT security in this account's holdings (not per
+     * holding row) - a client rarely holds the same security twice, but this
+     * keeps it correct and avoids redundant queries either way.
+     *
+     * For each security: find the most recent price_history close strictly
+     * before today. If none exists yet (brand new security with no history,
+     * or history was only ever entered for today), we fall back to the
+     * security's own currentPrice - which makes todaysPL come out to exactly
+     * 0 for that holding, an honest "we don't know today's move yet" rather
+     * than a fabricated number.
+     */
+    private Map<Long, BigDecimal> buildPreviousCloseLookup(List<Holdings> holdings) {
+        Map<Long, BigDecimal> result = new HashMap<>();
+        LocalDate today = LocalDate.now();
+
+        for (Holdings holding : holdings) {
+            Long securityId = holding.getSecurity().getId();
+            if (result.containsKey(securityId)) {
+                continue;
+            }
+
+            BigDecimal previousClose = priceHistoryRepository
+                    .findFirstBySecurityIdAndDateLessThanOrderByDateDesc(securityId, today)
+                    .map(PriceHistory::getClosePrice)
+                    .orElse(holding.getSecurity().getCurrentPrice());
+
+            result.put(securityId, previousClose);
+        }
+
+        return result;
     }
 
     private User getUserOrThrow(String username) {

@@ -14,4 +14,6 @@ public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long
     List<PriceHistory> findBySecurityIdAndDateBetweenOrderByDateAsc(Long securityId, LocalDate start, LocalDate end);
 
     Optional<PriceHistory> findBySecurityIdAndDate(Long securityId, LocalDate date);
+
+    Optional<PriceHistory> findFirstBySecurityIdAndDateLessThanOrderByDateDesc(Long securityId, LocalDate date);
 }

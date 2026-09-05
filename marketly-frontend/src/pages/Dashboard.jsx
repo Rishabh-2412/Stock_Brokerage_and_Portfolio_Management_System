@@ -57,8 +57,14 @@ export default function Dashboard() {
 
   // Real field names confirmed from /portfolio/account/{id} response.
   const portfolioValue = portfolio.data?.totalCurrentValue ?? 0;
-  const pnl = portfolio.data?.totalUnrealizedPL ?? 0;
-  const pnlPercent = portfolio.data?.totalUnrealizedPLPercent ?? 0;
+
+  // todaysPL/todaysPLPercent = actual day change (vs yesterday's close).
+  // unrealizedPL/unrealizedPLPercent = total gain/loss since purchase -
+  // kept as a separate card since it answers a different question.
+  const todaysPL = portfolio.data?.totalTodaysPL ?? 0;
+  const todaysPLPercent = portfolio.data?.totalTodaysPLPercent ?? 0;
+  const totalPL = portfolio.data?.totalUnrealizedPL ?? 0;
+  const totalPLPercent = portfolio.data?.totalUnrealizedPLPercent ?? 0;
 
   const recentOrders = (orders.data ?? []).slice(0, 5);
   const watchlistItems = (watchlist.data ?? []).slice(0, 5);
@@ -71,9 +77,15 @@ export default function Dashboard() {
         <StatCard label="Portfolio Value" value={formatCurrency(portfolioValue)} />
         <StatCard
           label="Today's P&L"
-          value={formatCurrency(pnl)}
-          sub={formatPercent(pnlPercent)}
-          positive={pnl >= 0}
+          value={formatCurrency(todaysPL)}
+          sub={formatPercent(todaysPLPercent)}
+          positive={todaysPL >= 0}
+        />
+        <StatCard
+          label="Total P&L"
+          value={formatCurrency(totalPL)}
+          sub={formatPercent(totalPLPercent)}
+          positive={totalPL >= 0}
         />
         <StatCard
           label="Available Margin"
