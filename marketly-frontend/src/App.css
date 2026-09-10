@@ -9,12 +9,22 @@ body {
   color: var(--text-primary);
 }
 
+/* Login/Register intentionally always stay light, regardless of the
+   dark-mode toggle - that toggle only lives inside the authenticated app
+   (AppLayout's topbar), so these hardcoded values (not the --bg-page /
+   --text-primary variables) keep this page unaffected by data-theme. */
 .auth-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  background: #f5f6fa;
+  color: #1a1a1a;
+  /* Overrides the dark-mode color-scheme set on <html>, which is what was
+     making the browser render input boxes/placeholder text with its native
+     dark UI even though .auth-card itself was still white. */
+  color-scheme: light;
 }
 
 .auth-card {
@@ -130,6 +140,7 @@ body {
 .auth-card h2 {
   margin: 0 0 0.25rem 0;
   font-size: 1.6rem;
+  color: #1a1a1a;
 }
 
 .subtitle {
@@ -152,6 +163,12 @@ body {
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 0.95rem;
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+.auth-card input::placeholder {
+  color: #999;
 }
 
 .auth-card input:focus {
