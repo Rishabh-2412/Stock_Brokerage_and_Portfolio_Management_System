@@ -9,7 +9,7 @@ import AppLayout from "./layouts/AppLayout";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Landing from "./pages/landing/Landing";
-import Dashboard from "./pages/Dashboard";
+import DashboardRouter from "./pages/DashboardRouter";
 import Portfolio from "./pages/portfolio/Portfolio";
 import Watchlist from "./pages/watchlist/Watchlist";
 import Orders from "./pages/orders/Orders";
@@ -55,7 +55,7 @@ function App() {
                 </AccountProvider>
               }
             >
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={<DashboardRouter />} />
               <Route path="/stocks" element={<StockSearch />} />
               <Route path="/stocks/:securityId" element={<StockDetails />} />
               <Route path="/trade/:securityId" element={<TradeOrder />} />

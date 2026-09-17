@@ -1,3 +1,16 @@
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { useAccount } from "../context/AccountContext";
 import { useAuth } from "../context/AuthContext";
 import { useFetch } from "../hooks/useFetch";
@@ -6,7 +19,13 @@ import { getOrdersForAccount } from "../api/orderApi";
 import { getWatchlist } from "../api/watchlistApi";
 import { LoadingState, ErrorState } from "../components/StatusStates";
 import { formatCurrency, formatPercent } from "../utils/format";
+import { ORDER_STATUS_COLORS, countBy } from "../utils/dashboardHelpers";
 import OpenAccount from "./account/OpenAccount";
+
+// Holding symbols aren't a fixed enum, so allocation-pie colors cycle
+// through this palette by position rather than a fixed name->color map
+// (same approach used for "Notes by Author" on the Research dashboard).
+const HOLDING_PALETTE = ["#2f3ee0", "#059669", "#db2777", "#d97706", "#7c3aed", "#0891b2", "#dc2626", "#0d9488"];
 
 export default function Dashboard() {
   const { role } = useAuth();
@@ -69,6 +88,18 @@ export default function Dashboard() {
   const recentOrders = (orders.data ?? []).slice(0, 5);
   const watchlistItems = (watchlist.data ?? []).slice(0, 5);
 
+  const holdings = portfolio.data?.holdings ?? [];
+  const allocationData = holdings.map((h, i) => ({
+    name: h.symbol,
+    value: Number(h.currentValue ?? 0),
+    color: HOLDING_PALETTE[i % HOLDING_PALETTE.length],
+  }));
+  const holdingPLData = holdings.map((h) => ({
+    name: h.symbol,
+    value: Number(h.todaysPL ?? 0),
+  }));
+  const orderStatusData = countBy(orders.data ?? [], "orderStatus", ORDER_STATUS_COLORS);
+
   return (
     <div>
       <h1 className="page-title">Dashboard</h1>
@@ -95,6 +126,80 @@ export default function Dashboard() {
       </div>
 
       <div className="dashboard-grid">
+        <div className="panel chart-panel">
+          <h3>Portfolio Allocation</h3>
+          {portfolio.isLoading && <LoadingState />}
+          {portfolio.error && (
+            <ErrorState error={portfolio.error} onRetry={portfolio.refetch} />
+          )}
+          {!portfolio.isLoading && !portfolio.error && allocationData.length === 0 && (
+            <p className="muted">No holdings yet - place a trade to see your allocation here.</p>
+          )}
+          {!portfolio.isLoading && allocationData.length > 0 && (
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={allocationData} dataKey="value" nameKey="name" innerRadius={45} outerRadius={80}>
+                  {allocationData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="panel chart-panel">
+          <h3>Today's P&L by Holding</h3>
+          {portfolio.isLoading && <LoadingState />}
+          {portfolio.error && (
+            <ErrorState error={portfolio.error} onRetry={portfolio.refetch} />
+          )}
+          {!portfolio.isLoading && !portfolio.error && holdingPLData.length === 0 && (
+            <p className="muted">No holdings yet.</p>
+          )}
+          {!portfolio.isLoading && holdingPLData.length > 0 && (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={holdingPLData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `₹${v}`} />
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Bar dataKey="value" isAnimationActive={false}>
+                  {holdingPLData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.value >= 0 ? "#16a34a" : "#dc2626"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="panel chart-panel">
+          <h3>Orders by Status</h3>
+          {orders.isLoading && <LoadingState />}
+          {orders.error && <ErrorState error={orders.error} onRetry={orders.refetch} />}
+          {!orders.isLoading && !orders.error && orderStatusData.length === 0 && (
+            <p className="muted">No orders yet.</p>
+          )}
+          {!orders.isLoading && orderStatusData.length > 0 && (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={orderStatusData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="value" isAnimationActive={false}>
+                  {orderStatusData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
         <div className="panel">
           <h3>Recent Orders</h3>
           {orders.isLoading && <LoadingState />}
